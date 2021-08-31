@@ -1,14 +1,7 @@
-use anyhow::Error;
 use serde::Deserialize;
-use yew::{
-    format::{Json, Nothing},
-    html,
-    services::{
-        fetch::{FetchTask, Request, Response},
-        FetchService,
-    },
-    Component, ComponentLink, Html, MouseEvent, ShouldRender,
-};
+use yew::{html, Component, ComponentLink, Html, MouseEvent, ShouldRender};
+
+use crate::fetcher::Fetcher;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,17 +9,19 @@ pub struct User {
     pub id: String,
     pub username: String,
     pub display_name: String,
+    pub current_avatar_thumbnail_image_url: String,
+    pub location: String,
 }
 
 pub struct Model {
     link: ComponentLink<Self>,
     counter: i32,
     users: Vec<User>,
-    _fetch_task: FetchTask,
+    _fetcher: Fetcher,
 }
 
 pub enum Msg {
-    DidFetchFriends(Response<Json<Result<Vec<User>, Error>>>),
+    DidFetchFriends(Vec<User>),
     Click(MouseEvent),
 }
 
@@ -35,16 +30,16 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let request = Request::get("https://vrchat.com/api/1/auth/user/friends")
-            .body(Nothing)
-            .unwrap();
-        let callback = link.callback(Msg::DidFetchFriends);
-        let _fetch_task = FetchService::fetch(request, callback).unwrap();
+        let mut fetcher = Fetcher::new();
+        fetcher.get(
+            "https://vrchat.com/api/1/auth/user/friends",
+            link.callback(Msg::DidFetchFriends),
+        );
         Self {
             link,
             counter: 0,
             users: vec![],
-            _fetch_task,
+            _fetcher: fetcher,
         }
     }
 
@@ -54,20 +49,8 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::DidFetchFriends(response) => {
-                let (meta, Json(json_data)) = response.into_parts();
-                if meta.status.is_success() || meta.status.as_u16() == 304 {
-                    match json_data {
-                        Ok(users) => {
-                            self.users = users;
-                        }
-                        Err(_error) => {
-                            // utils::handle_api_error(Some(error));
-                        }
-                    }
-                } else {
-                    // utils::handle_api_error(None);
-                }
+            Msg::DidFetchFriends(users) => {
+                self.users = users;
                 true
             }
             Msg::Click(event) => {
@@ -97,6 +80,7 @@ impl Model {
           <div>
             <div>{&user.id}</div>
             <div>{&user.display_name}</div>
+            <img src=user.current_avatar_thumbnail_image_url.clone() />
           </div>
         }
     }

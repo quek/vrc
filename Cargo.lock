@@ -297,6 +297,7 @@ dependencies = [
  "anyhow",
  "serde",
  "wasm-bindgen",
+ "web-sys",
  "yew",
 ]
 
