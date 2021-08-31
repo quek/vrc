@@ -1,4 +1,5 @@
 use anyhow::Error;
+use serde::Deserialize;
 use yew::{
     format::{Json, Nothing},
     html,
@@ -9,15 +10,23 @@ use yew::{
     Component, ComponentLink, Html, MouseEvent, ShouldRender,
 };
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct User {
+    pub id: String,
+    pub username: String,
+    pub display_name: String,
+}
+
 pub struct Model {
     link: ComponentLink<Self>,
     counter: i32,
-    foo: String,
+    users: Vec<User>,
     _fetch_task: FetchTask,
 }
 
 pub enum Msg {
-    DidFetchFriends(Response<Json<Result<String, Error>>>),
+    DidFetchFriends(Response<Json<Result<Vec<User>, Error>>>),
     Click(MouseEvent),
 }
 
@@ -34,7 +43,7 @@ impl Component for Model {
         Self {
             link,
             counter: 0,
-            foo: "ふぇっち".to_string(),
+            users: vec![],
             _fetch_task,
         }
     }
@@ -49,8 +58,8 @@ impl Component for Model {
                 let (meta, Json(json_data)) = response.into_parts();
                 if meta.status.is_success() || meta.status.as_u16() == 304 {
                     match json_data {
-                        Ok(out) => {
-                            self.foo = out;
+                        Ok(users) => {
+                            self.users = users;
                         }
                         Err(_error) => {
                             // utils::handle_api_error(Some(error));
@@ -74,9 +83,20 @@ impl Component for Model {
         html! {
           <div>
             <div>{"に～ぼし"}</div>
-            <div>{&self.foo}</div>
+            <div>{for self.users.iter().map(|x| self.view_user(x))}</div>
             <div>{self.counter}</div>
             <div><button onclick=click>{"++"}</button></div>
+          </div>
+        }
+    }
+}
+
+impl Model {
+    fn view_user(&self, user: &User) -> Html {
+        html! {
+          <div>
+            <div>{&user.id}</div>
+            <div>{&user.display_name}</div>
           </div>
         }
     }
