@@ -1,19 +1,22 @@
 {
     "manifest_version": 2,
-    "name": "Borderify",
+    "name": "vrc",
     "version": "1.0",
     "description": "Adds a solid red border to all webpages matching mozilla.org.",
-    "icons": {
-        "48": "icons/border-48.png"
-    },
-    "content_scripts": [
-        {
-            "matches": [
-                "*://*.mozilla.org/*"
-            ],
-            "js": [
-                "vrc.js"
-            ]
+    "permissions": [
+        "tabs",
+        "https://vrchat.com/",
+        "https://www.vrchat.com/"
+    ],
+    "browser_action": {
+        "default_icon": {
+            "48": "icons/border-48.png"
         }
-    ]
+    },
+    "background": {
+        "scripts": [
+            "start.js"
+        ],
+        "persistent": false
+    }
 }

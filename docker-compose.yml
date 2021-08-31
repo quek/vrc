@@ -4,12 +4,11 @@ services:
     user: "${UID}:${GID}"
     build:
       context: ./docker
-      args:
-        - UID=${UID}
-        - GID=${GID}
     volumes:
       - .:/app
     environment:
+      CARGO_HOME: /app/tmp
+      HOME: /app/tmp
       LANG: ja_JP.UTF-8
       TZ: Asia/Tokyo
       RUST_BACKTRACE: 1

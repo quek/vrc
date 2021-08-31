@@ -10,13 +10,9 @@ RUN cargo install cargo-watch
 RUN cargo install wasm-bindgen-cli
 RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-# Remove cache & workfile
 RUN rm -rf /var/lib/apt/lists/* /var/cache/apt/*
-
-ARG UID
-ARG GID
-RUN chown -R ${UID}:${GID} /usr/local/cargo
 
 WORKDIR /app
 
-CMD ["cargo", "watch", "--", "wasm-pack", "build"]
+CMD ["cargo", "watch", "--ignore", "tmp", "--", \
+    "wasm-pack", "build", "--no-typescript", "--target", "web"]
