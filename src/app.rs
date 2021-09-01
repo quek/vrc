@@ -12,16 +12,24 @@ pub struct User {
     pub current_avatar_thumbnail_image_url: String,
     pub location: String,
 }
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Favorite {
+    pub id: String,
+    pub favorite_id: String,
+}
 
 pub struct Model {
     link: ComponentLink<Self>,
     counter: i32,
     users: Vec<User>,
+    favorites: Vec<Favorite>,
     _fetcher: Fetcher,
 }
 
 pub enum Msg {
     DidFetchFriends(Vec<User>),
+    DidFetchFavorites(Vec<Favorite>),
     Click(MouseEvent),
 }
 
@@ -35,10 +43,15 @@ impl Component for Model {
             "https://vrchat.com/api/1/auth/user/friends",
             link.callback(Msg::DidFetchFriends),
         );
+        fetcher.get(
+            "https://vrchat.com/api/1/favorites?n=100&type=friend",
+            link.callback(Msg::DidFetchFavorites),
+        );
         Self {
             link,
             counter: 0,
             users: vec![],
+            favorites: vec![],
             _fetcher: fetcher,
         }
     }
@@ -51,6 +64,10 @@ impl Component for Model {
         match msg {
             Msg::DidFetchFriends(users) => {
                 self.users = users;
+                true
+            }
+            Msg::DidFetchFavorites(favorites) => {
+                self.favorites = favorites;
                 true
             }
             Msg::Click(event) => {
