@@ -1,0 +1,25 @@
+body {
+    box-sizing: border-box;
+    margin: 1vw;
+}
+a {
+    text-decoration: none;
+}
+.users {
+    display: flex;
+    flex-wrap: wrap;
+}
+.users > a {
+    width: calc(96vw / 10) ;
+}
+.users > a > div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    white-space: nowrap;
+}
+.users img {
+    display: block;
+    object-fit: cover;
+    width: 100%;
+}

@@ -66,7 +66,7 @@ impl Component for Model {
         html! {
           <div>
             <div>{"に～ぼし"}</div>
-            <div>{for self.users.iter().map(|x| self.view_user(x))}</div>
+            <div class="users">{for self.users.iter().map(|x| self.view_user(x))}</div>
             <div>{self.counter}</div>
             <div><button onclick=click>{"++"}</button></div>
           </div>
@@ -77,11 +77,10 @@ impl Component for Model {
 impl Model {
     fn view_user(&self, user: &User) -> Html {
         html! {
-          <div>
-            <div>{&user.id}</div>
-            <div>{&user.display_name}</div>
+          <a href="#">
             <img src=user.current_avatar_thumbnail_image_url.clone() />
-          </div>
+            <div>{&user.display_name}</div>
+          </a>
         }
     }
 }
