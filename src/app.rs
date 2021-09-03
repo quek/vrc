@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 use yew::{html, Component, ComponentLink, Html, MouseEvent, ShouldRender};
 
@@ -12,6 +14,7 @@ pub struct Friend {
     pub current_avatar_thumbnail_image_url: String,
     pub location: String,
 }
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Favorite {
@@ -19,12 +22,23 @@ pub struct Favorite {
     pub favorite_id: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct World {
+    pub id: String,
+    pub name: String,
+}
+
+type WorldId = String;
+const PRIVATE_WORLD_ID: &'static str = "private";
+
 pub struct Model {
     link: ComponentLink<Self>,
     counter: i32,
     firends: Vec<Friend>,
     favorites: Vec<Favorite>,
-    favorte_friends: Vec<Friend>,
+    favorte_friends: HashMap<WorldId, Vec<Friend>>,
+    worlds: HashMap<WorldId, World>,
     fetcher: Fetcher,
 }
 
@@ -44,7 +58,8 @@ impl Component for Model {
             counter: 0,
             firends: vec![],
             favorites: vec![],
-            favorte_friends: vec![],
+            favorte_friends: HashMap::new(),
+            worlds: HashMap::new(),
             fetcher: Fetcher::new(),
         };
         me.fetch_favorites();
@@ -81,7 +96,7 @@ impl Component for Model {
           <div>
             <div><button onclick=reload>{"reload"}</button></div>
             <div>{"に～ぼし"}</div>
-            <div class="friends">{for self.favorte_friends.iter().map(|x| self.view_friend(x))}</div>
+            {self.view_favorte_friends()}
             <div>{"に～ぼし"}</div>
             <div class="friends">{for self.firends.iter().map(|x| self.view_friend(x))}</div>
             <div>{self.counter}</div>
@@ -113,11 +128,26 @@ impl Model {
                 .any(|favorite| favorite.id == self.firends[i].id)
             {
                 let friend = self.firends.remove(i);
-                self.favorte_friends.push(friend);
+                self.favorte_friends
+                    .entry(friend.location.clone())
+                    .or_default()
+                    .push(friend);
             } else {
                 i += 1;
             }
         }
+    }
+
+    fn view_favorte_friends(&self) -> Html {
+        let xs = self.favorte_friends.iter().map(|(world_id, friends)| {
+            html! {
+              <div>
+                <div>{world_id}</div>
+                {for friends.iter().map(|friend| self.view_friend(friend))}
+              </div>
+            }
+        });
+        html! {for xs}
     }
 
     fn view_friend(&self, friend: &Friend) -> Html {
