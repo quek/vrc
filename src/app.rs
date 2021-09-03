@@ -201,5 +201,8 @@ impl Model {
 }
 
 fn location_to_world_id(location: &str) -> Option<String> {
-    location.split(":").next().map(|x| x.to_string())
+    match location.split(":").next() {
+        Some(x) if x.starts_with("wrld_") => Some(x.to_string()),
+        _ => None,
+    }
 }
