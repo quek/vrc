@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::Deserialize;
 use yew::{html, Component, ComponentLink, Html, MouseEvent, ShouldRender};
@@ -30,14 +30,15 @@ pub struct World {
 }
 
 type WorldId = String;
-const PRIVATE_WORLD_ID: &'static str = "private";
+type Location = String;
+const PRIVATE_LOCATION: &'static str = "private";
 
 pub struct Model {
     link: ComponentLink<Self>,
     counter: i32,
     firends: Vec<Friend>,
     favorites: Vec<Favorite>,
-    favorte_friends: HashMap<WorldId, Vec<Friend>>,
+    favorte_friends: HashMap<Location, Vec<Friend>>,
     worlds: HashMap<WorldId, World>,
     fetcher: Fetcher,
 }
@@ -45,6 +46,7 @@ pub struct Model {
 pub enum Msg {
     DidFetchFriends(Vec<Friend>),
     DidFetchFavorites(Vec<Favorite>),
+    DidFetchWorld(World),
     Reload(MouseEvent),
 }
 
@@ -82,6 +84,10 @@ impl Component for Model {
                 self.fetch_friends();
                 false
             }
+            Msg::DidFetchWorld(world) => {
+                self.worlds.insert(world.id.clone(), world);
+                true
+            }
             Msg::Reload(event) => {
                 event.prevent_default();
                 self.fetch_friends();
@@ -112,10 +118,18 @@ impl Model {
             self.link.callback(Msg::DidFetchFavorites),
         );
     }
+
     fn fetch_friends(&mut self) {
         self.fetcher.get(
             "https://vrchat.com/api/1/auth/user/friends",
             self.link.callback(Msg::DidFetchFriends),
+        );
+    }
+
+    fn fetch_world(&mut self, world_id: &str) {
+        self.fetcher.get(
+            &format!("https://vrchat.com/api/1/worlds/{}", world_id),
+            self.link.callback(Msg::DidFetchWorld),
         );
     }
 
@@ -125,7 +139,7 @@ impl Model {
             if self
                 .favorites
                 .iter()
-                .any(|favorite| favorite.id == self.firends[i].id)
+                .any(|favorite| favorite.favorite_id == self.firends[i].id)
             {
                 let friend = self.firends.remove(i);
                 self.favorte_friends
@@ -136,13 +150,39 @@ impl Model {
                 i += 1;
             }
         }
+        let mut world_ids = HashSet::new();
+        for location in self.favorte_friends.keys() {
+            if location == PRIVATE_LOCATION {
+                continue;
+            }
+            if let Some(world_id) = location_to_world_id(location) {
+                if !self.worlds.contains_key(&world_id) {
+                    world_ids.insert(world_id.to_string());
+                }
+            }
+        }
+        for world_id in world_ids {
+            self.fetch_world(&world_id);
+        }
     }
 
     fn view_favorte_friends(&self) -> Html {
-        let xs = self.favorte_friends.iter().map(|(world_id, friends)| {
+        let xs = self.favorte_friends.iter().map(|(location, friends)| {
+            let world_id = location_to_world_id(location);
+            let world = if let Some(world_id) = world_id {
+                if let Some(world) = self.worlds.get(&world_id) {
+                    html! {
+                      <div>{&world.name}</div>
+                    }
+                } else {
+                    html! {}
+                }
+            } else {
+                html! {}
+            };
             html! {
               <div>
-                <div>{world_id}</div>
+                {world}
                 {for friends.iter().map(|friend| self.view_friend(friend))}
               </div>
             }
@@ -158,4 +198,8 @@ impl Model {
           </a>
         }
     }
+}
+
+fn location_to_world_id(location: &str) -> Option<String> {
+    location.split(":").next().map(|x| x.to_string())
 }
