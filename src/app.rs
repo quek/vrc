@@ -5,7 +5,7 @@ use crate::fetcher::Fetcher;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct User {
+pub struct Friend {
     pub id: String,
     pub username: String,
     pub display_name: String,
@@ -22,15 +22,16 @@ pub struct Favorite {
 pub struct Model {
     link: ComponentLink<Self>,
     counter: i32,
-    users: Vec<User>,
+    firends: Vec<Friend>,
     favorites: Vec<Favorite>,
-    _fetcher: Fetcher,
+    favorte_friends: Vec<Friend>,
+    fetcher: Fetcher,
 }
 
 pub enum Msg {
-    DidFetchFriends(Vec<User>),
+    DidFetchFriends(Vec<Friend>),
     DidFetchFavorites(Vec<Favorite>),
-    Click(MouseEvent),
+    Reload(MouseEvent),
 }
 
 impl Component for Model {
@@ -38,22 +39,16 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut fetcher = Fetcher::new();
-        fetcher.get(
-            "https://vrchat.com/api/1/auth/user/friends",
-            link.callback(Msg::DidFetchFriends),
-        );
-        fetcher.get(
-            "https://vrchat.com/api/1/favorites?n=100&type=friend",
-            link.callback(Msg::DidFetchFavorites),
-        );
-        Self {
+        let mut me = Self {
             link,
             counter: 0,
-            users: vec![],
+            firends: vec![],
             favorites: vec![],
-            _fetcher: fetcher,
-        }
+            favorte_friends: vec![],
+            fetcher: Fetcher::new(),
+        };
+        me.fetch_favorites();
+        me
     }
 
     fn change(&mut self, _: Self::Properties) -> ShouldRender {
@@ -62,41 +57,74 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::DidFetchFriends(users) => {
-                self.users = users;
+            Msg::DidFetchFriends(friends) => {
+                self.firends = friends;
+                self.pick_up_favorite_friends();
                 true
             }
             Msg::DidFetchFavorites(favorites) => {
                 self.favorites = favorites;
-                true
+                self.fetch_friends();
+                false
             }
-            Msg::Click(event) => {
+            Msg::Reload(event) => {
                 event.prevent_default();
-                self.counter += 1;
+                self.fetch_friends();
                 true
             }
         }
     }
 
     fn view(&self) -> Html {
-        let click = self.link.callback(Msg::Click);
+        let reload = self.link.callback(Msg::Reload);
         html! {
           <div>
+            <div><button onclick=reload>{"reload"}</button></div>
             <div>{"に～ぼし"}</div>
-            <div class="users">{for self.users.iter().map(|x| self.view_user(x))}</div>
+            <div class="friends">{for self.favorte_friends.iter().map(|x| self.view_friend(x))}</div>
+            <div>{"に～ぼし"}</div>
+            <div class="friends">{for self.firends.iter().map(|x| self.view_friend(x))}</div>
             <div>{self.counter}</div>
-            <div><button onclick=click>{"++"}</button></div>
           </div>
         }
     }
 }
 
 impl Model {
-    fn view_user(&self, user: &User) -> Html {
+    fn fetch_favorites(&mut self) {
+        self.fetcher.get(
+            "https://vrchat.com/api/1/favorites?n=100&type=friend",
+            self.link.callback(Msg::DidFetchFavorites),
+        );
+    }
+    fn fetch_friends(&mut self) {
+        self.fetcher.get(
+            "https://vrchat.com/api/1/auth/user/friends",
+            self.link.callback(Msg::DidFetchFriends),
+        );
+    }
+
+    fn pick_up_favorite_friends(&mut self) {
+        let mut i = 0;
+        while i < self.firends.len() {
+            if self
+                .favorites
+                .iter()
+                .any(|favorite| favorite.id == self.firends[i].id)
+            {
+                let friend = self.firends.remove(i);
+                self.favorte_friends.push(friend);
+            } else {
+                i += 1;
+            }
+        }
+    }
+
+    fn view_friend(&self, friend: &Friend) -> Html {
         html! {
           <a href="#">
-            <img src=user.current_avatar_thumbnail_image_url.clone() />
-            <div>{&user.display_name}</div>
+            <img src=friend.current_avatar_thumbnail_image_url.clone() />
+            <div>{&friend.display_name}</div>
           </a>
         }
     }

@@ -5,20 +5,20 @@ body {
 a {
     text-decoration: none;
 }
-.users {
+.friends {
     display: flex;
     flex-wrap: wrap;
 }
-.users > a {
+.friends > a {
     width: calc(96vw / 10) ;
 }
-.users > a > div {
+.friends > a > div {
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
     white-space: nowrap;
 }
-.users img {
+.friends img {
     display: block;
     object-fit: cover;
     width: 100%;
