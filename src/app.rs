@@ -35,7 +35,6 @@ const PRIVATE_LOCATION: &'static str = "private";
 
 pub struct Model {
     link: ComponentLink<Self>,
-    counter: i32,
     firends: Vec<Friend>,
     favorites: Vec<Favorite>,
     favorte_friends: HashMap<Location, Vec<Friend>>,
@@ -57,7 +56,6 @@ impl Component for Model {
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut me = Self {
             link,
-            counter: 0,
             firends: vec![],
             favorites: vec![],
             favorte_friends: HashMap::new(),
@@ -101,11 +99,9 @@ impl Component for Model {
         html! {
           <div>
             <div><button onclick=reload>{"reload"}</button></div>
-            <div>{"に～ぼし"}</div>
             {self.view_favorte_friends()}
-            <div>{"に～ぼし"}</div>
+            <hr />
             <div class="friends">{for self.firends.iter().map(|x| self.view_friend(x))}</div>
-            <div>{self.counter}</div>
           </div>
         }
     }
@@ -121,7 +117,7 @@ impl Model {
 
     fn fetch_friends(&mut self) {
         self.fetcher.get(
-            "https://vrchat.com/api/1/auth/user/friends",
+            "https://vrchat.com/api/1/auth/user/friends?n=100",
             self.link.callback(Msg::DidFetchFriends),
         );
     }
@@ -150,6 +146,10 @@ impl Model {
                 i += 1;
             }
         }
+
+        self.firends
+            .sort_by_key(|friend| friend.display_name.clone());
+
         let mut world_ids = HashSet::new();
         for location in self.favorte_friends.keys() {
             if location == PRIVATE_LOCATION {
@@ -175,15 +175,19 @@ impl Model {
                       <div>{&world.name}</div>
                     }
                 } else {
-                    html! {}
+                    html! { <div data-world-id=world_id>{"loading..."}</div> }
                 }
+            } else if location == PRIVATE_LOCATION {
+                html! { <div>{"プラベ"}</div> }
             } else {
-                html! {}
+                html! { <div>{location}</div> }
             };
             html! {
               <div>
                 {world}
-                {for friends.iter().map(|friend| self.view_friend(friend))}
+                <div class="friends">
+                  {for friends.iter().map(|friend| self.view_friend(friend))}
+                </div>
               </div>
             }
         });
