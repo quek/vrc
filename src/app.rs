@@ -130,6 +130,7 @@ impl Model {
     }
 
     fn pick_up_favorite_friends(&mut self) {
+        self.favorte_friends.clear();
         let mut i = 0;
         while i < self.firends.len() {
             if self
@@ -183,7 +184,7 @@ impl Model {
                 html! { <div>{location}</div> }
             };
             html! {
-              <div>
+              <div class="worlds">
                 {world}
                 <div class="friends">
                   {for friends.iter().map(|friend| self.view_friend(friend))}
@@ -196,7 +197,7 @@ impl Model {
 
     fn view_friend(&self, friend: &Friend) -> Html {
         html! {
-          <a href="#">
+          <a href="#" data-location=friend.location.clone()>
             <img src=friend.current_avatar_thumbnail_image_url.clone() />
             <div>{&friend.display_name}</div>
           </a>
