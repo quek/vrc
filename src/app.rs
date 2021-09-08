@@ -73,7 +73,10 @@ impl Component for Model {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::DidFetchFriends(friends) => {
-                self.firends = friends;
+                self.firends = friends
+                    .into_iter()
+                    .filter(|friend| !friend.location.is_empty())
+                    .collect();
                 self.pick_up_favorite_friends();
                 true
             }
